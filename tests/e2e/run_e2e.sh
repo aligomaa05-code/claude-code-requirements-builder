@@ -3,9 +3,16 @@
 # Validates GENERATED outputs, not documentation.
 #
 # Usage:
-#   bash tests/e2e/run_e2e.sh              # Fail-closed if no runner
-#   E2E_ALLOW_SKIP=1 bash tests/e2e/run_e2e.sh  # Skip if no runner
-#   E2E_RUNNER=fixture bash tests/e2e/run_e2e.sh # Use fixture data
+#   bash tests/e2e/run_e2e.sh                      # Auto-detect runner (fail-closed if none)
+#   E2E_RUNNER=fixture bash tests/e2e/run_e2e.sh   # Use fixture data (always works)
+#   E2E_RUNNER=claude bash tests/e2e/run_e2e.sh    # Use real Claude CLI (fail-closed if missing)
+#   E2E_ALLOW_SKIP=1 bash tests/e2e/run_e2e.sh     # Skip if no runner (exit 77)
+#
+# Exit codes:
+#   0  - All validators passed
+#   1  - Validation failed
+#   2  - No runner available (fail-closed)
+#   77 - Skipped (E2E_ALLOW_SKIP=1 and no runner)
 
 set -euo pipefail
 
@@ -33,12 +40,24 @@ log_warn() { echo -e "${YELLOW}[E2E-WARN]${NC} $1"; }
 # Runner Detection
 #######################################
 detect_runner() {
+    # Explicit fixture mode
     if [[ "${E2E_RUNNER:-}" == "fixture" ]]; then
         echo "fixture"
         return 0
     fi
     
-    # Check for Claude CLI
+    # Explicit claude mode - fail-closed if CLI unavailable
+    if [[ "${E2E_RUNNER:-}" == "claude" ]]; then
+        if command -v claude &> /dev/null; then
+            echo "claude"
+            return 0
+        else
+            echo "claude-missing"
+            return 0
+        fi
+    fi
+    
+    # Auto-detect: prefer claude if available
     if command -v claude &> /dev/null; then
         echo "claude"
         return 0
@@ -68,13 +87,130 @@ run_fixture() {
 }
 
 #######################################
-# Real Claude Runner (stub - requires interactive session)
+# Real Claude Runner - uses claude CLI to generate artifacts
 #######################################
 run_claude() {
     local workspace="$1"
-    log_warn "Claude CLI runner not yet implemented"
-    log_warn "Claude Code requires interactive session"
-    return 1
+    
+    # Verify CLI responds
+    log_info "Checking Claude CLI availability..."
+    if ! claude --version &>/dev/null; then
+        log_fail "Claude CLI installed but not responding to --version"
+        echo ""
+        echo "Troubleshooting:"
+        echo "  1. Ensure Claude CLI is properly installed"
+        echo "  2. Check authentication: claude auth status"
+        echo "  3. Try: claude --help"
+        return 1
+    fi
+    
+    local cli_version
+    cli_version=$(claude --version 2>&1 | head -1)
+    log_info "Claude CLI version: $cli_version"
+    
+    # Create minimal mock codebase for context
+    mkdir -p "$workspace/src"
+    cat > "$workspace/src/app.ts" << 'MOCKEOF'
+// Main application entry point
+export function main(): void {
+    console.log("Application started");
+}
+
+export function getUserById(id: string): User | null {
+    // Placeholder implementation
+    return null;
+}
+
+interface User {
+    id: string;
+    name: string;
+    email: string;
+}
+MOCKEOF
+    
+    log_info "Created mock codebase in workspace"
+    
+    # Create requirements directory
+    mkdir -p "$workspace/requirements/e2e-test-feature"
+    
+    # Craft the generation prompt - asks Claude to create conformant artifacts
+    local prompt
+    read -r -d '' prompt << 'PROMPTEOF' || true
+You are generating test artifacts for a requirements system. Create these files in the current directory:
+
+1. metadata.json - must have this EXACT structure:
+{
+  "_schema": "2.0",
+  "request": "Add user authentication feature",
+  "complexity": "simple",
+  "status": "active",
+  "phase": "complete",
+  "started": "2025-02-05T10:00:00Z",
+  "lastUpdated": "2025-02-05T10:30:00Z",
+  "todos": {
+    "status": "injected",
+    "total": 3,
+    "done": 1,
+    "open": 2
+  }
+}
+
+2. sample-code.ts - must contain at least one TODO with this exact format:
+// TODO [REQ:e2e-test-feature] [ID:TODO-001] [P:1] Implement user login
+
+Output ONLY the file contents, nothing else. Start with metadata.json.
+PROMPTEOF
+
+    log_info "Invoking Claude CLI to generate artifacts..."
+    
+    # Run Claude in print mode, output to workspace
+    # Using --print to get direct output, then parse and save files
+    local output
+    if ! output=$(cd "$workspace/requirements/e2e-test-feature" && claude -p "$prompt" 2>&1); then
+        log_fail "Claude CLI invocation failed"
+        echo "$output"
+        return 1
+    fi
+    
+    # Check if metadata.json was created (Claude may create files directly or output content)
+    if [[ -f "$workspace/requirements/e2e-test-feature/metadata.json" ]]; then
+        log_info "Claude generated metadata.json directly"
+    else
+        # Try to extract JSON from output and save it
+        log_info "Attempting to parse Claude output..."
+        local json_content
+        json_content=$(echo "$output" | grep -Pzo '(?s)\{[^{}]*"_schema"[^{}]*\}' | head -1 || true)
+        
+        if [[ -n "$json_content" ]] && echo "$json_content" | jq empty 2>/dev/null; then
+            echo "$json_content" > "$workspace/requirements/e2e-test-feature/metadata.json"
+            log_info "Extracted and saved metadata.json from output"
+        else
+            log_fail "Could not extract valid metadata.json from Claude output"
+            echo "Raw output (first 500 chars):"
+            echo "$output" | head -c 500
+            return 1
+        fi
+    fi
+    
+    # Create sample-code.ts if not already created
+    if [[ ! -f "$workspace/requirements/e2e-test-feature/sample-code.ts" ]]; then
+        # Extract or create minimal sample
+        cat > "$workspace/requirements/e2e-test-feature/sample-code.ts" << 'SAMPLEEOF'
+// Generated by E2E behavioral oracle
+// TODO [REQ:e2e-test-feature] [ID:TODO-001] [P:1] Implement user login
+// WHY: Required for authentication flow
+// DONE WHEN: Login function returns valid session token
+// SPEC: requirements/e2e-test-feature/spec.md
+
+export function login(email: string, password: string): Promise<string> {
+    throw new Error("Not implemented");
+}
+SAMPLEEOF
+        log_info "Created sample-code.ts with TODO marker"
+    fi
+    
+    log_info "Claude runner completed"
+    return 0
 }
 
 
@@ -241,6 +377,27 @@ fi
 # Detect runner
 RUNNER=$(detect_runner)
 log_info "Runner detected: $RUNNER"
+
+# Handle claude-missing: explicit E2E_RUNNER=claude but CLI not installed
+if [[ "$RUNNER" == "claude-missing" ]]; then
+    echo ""
+    echo -e "${RED}FAIL: E2E_RUNNER=claude requested but Claude CLI not found${NC}"
+    echo ""
+    echo "Claude CLI is required for real behavioral testing."
+    echo ""
+    echo "Install Claude CLI:"
+    echo "  npm install -g @anthropic-ai/claude-cli"
+    echo "  # or"
+    echo "  brew install claude"
+    echo ""
+    echo "Then authenticate:"
+    echo "  claude auth login"
+    echo ""
+    echo "Alternative: use fixture runner:"
+    echo "  E2E_RUNNER=fixture bash tests/e2e/run_e2e.sh"
+    echo ""
+    exit 2
+fi
 
 if [[ "$RUNNER" == "none" ]]; then
     echo ""

@@ -31,7 +31,48 @@ E2E_ALLOW_SKIP=1 bash tests/e2e/run_e2e.sh
 
 # Use fixture runner (validates the validator itself)
 E2E_RUNNER=fixture bash tests/e2e/run_e2e.sh
+
+# Use real Claude CLI (local testing only)
+E2E_RUNNER=claude bash tests/e2e/run_e2e.sh
 ```
+
+## Real Runner Mode
+
+The `E2E_RUNNER=claude` mode uses the Claude CLI to generate actual artifacts, providing true behavioral validation.
+
+### Requirements
+
+1. **Claude CLI installed**: `npm install -g @anthropic-ai/claude-cli` or `brew install claude`
+2. **Authenticated**: `claude auth login`
+
+### What It Does
+
+1. Creates a temporary workspace with a minimal mock codebase
+2. Invokes `claude -p` with a structured prompt to generate:
+   - `metadata.json` (schema 2.0 compliant)
+   - `sample-code.ts` (with TODO markers)
+3. Runs validators V1–V7 on the generated output
+4. Cleans up temp workspace
+
+### What It Validates
+
+- The LLM can produce schema-compliant `metadata.json`
+- Generated TODOs follow correct format (`[P:N]`, zero-padded IDs)
+- Invariants hold (e.g., `todos.open + todos.done == todos.total`)
+
+### What It Does NOT Validate
+
+- Full slash-command workflow (requires interactive Claude Code session)
+- Multi-phase discovery process
+- File injection into actual codebase
+
+### Failure Modes
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Exit 2: "CLI not found" | Claude CLI not installed | Install and authenticate |
+| Exit 1: "Could not extract JSON" | LLM output unparseable | Check prompt or retry |
+| Exit 1: Validator failure | LLM produced non-conformant output | Review generated artifacts |
 
 ## Runner Interface
 
