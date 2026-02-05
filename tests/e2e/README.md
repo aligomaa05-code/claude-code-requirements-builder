@@ -76,10 +76,11 @@ The `E2E_RUNNER=claude` mode uses the Claude CLI to generate actual artifacts, p
 
 ## Runner Interface
 
-The script checks for runners in order:
-1. `claude` CLI (Anthropic Claude Code)
-2. `E2E_RUNNER=fixture` (built-in test fixtures)
-3. Fail-closed with `SKIP_BEHAVIORAL: no runner`
+Runner selection logic:
+1. `E2E_RUNNER=fixture` → use fixture data
+2. `E2E_RUNNER=claude` → use Claude CLI (fail-closed if missing)
+3. Auto-detect: prefer `claude` CLI if available
+4. Fail-closed with `SKIP_BEHAVIORAL: no runner`
 
 ## Validations Performed
 
