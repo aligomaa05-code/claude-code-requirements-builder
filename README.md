@@ -93,6 +93,16 @@ bash scripts/install.sh --global
 bash scripts/install.sh --force
 ```
 
+## Secret Protection (Optional)
+
+Enable pre-commit hooks to prevent accidentally committing API keys:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+This blocks commits containing `sk-proj-*` or `sk-*` patterns. Keys should be stored in `.env.local` (already gitignored) or exported in your shell.
+
 ## License
 
 MIT — see [LICENSE](LICENSE)

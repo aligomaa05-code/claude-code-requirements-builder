@@ -47,13 +47,19 @@ detect_runner() {
         return 0
     fi
 
-    # Explicit openai mode - fail-closed if key missing
+    # Explicit openai mode - fail-closed if key missing/invalid
     if [[ "${E2E_RUNNER:-}" == "openai" ]]; then
-        if [[ -n "${OPENAI_API_KEY:-}" ]]; then
-            echo "openai"
+        if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+            echo "openai-missing"
+            return 0
+        elif [[ "${OPENAI_API_KEY}" == "PASTE_KEY_HERE" ]]; then
+            echo "openai-placeholder"
+            return 0
+        elif [[ ${#OPENAI_API_KEY} -lt 40 ]]; then
+            echo "openai-short"
             return 0
         else
-            echo "openai-missing"
+            echo "openai"
             return 0
         fi
     fi
@@ -438,6 +444,33 @@ if [[ "$RUNNER" == "openai-missing" ]]; then
     echo ""
     echo "Alternative: use fixture runner:"
     echo "  E2E_RUNNER=fixture bash tests/e2e/run_e2e.sh"
+    echo ""
+    exit 2
+fi
+
+# Handle openai-placeholder: key is set to placeholder value
+if [[ "$RUNNER" == "openai-placeholder" ]]; then
+    echo ""
+    echo -e "${RED}FAIL: OPENAI_API_KEY is set to placeholder 'PASTE_KEY_HERE'${NC}"
+    echo ""
+    echo "Fix: Replace the placeholder with your actual API key:"
+    echo "  export OPENAI_API_KEY=\"sk-proj-...\""
+    echo ""
+    echo "Get your key at: https://platform.openai.com/api-keys"
+    echo ""
+    exit 2
+fi
+
+# Handle openai-short: key is too short to be valid
+if [[ "$RUNNER" == "openai-short" ]]; then
+    echo ""
+    echo -e "${RED}FAIL: OPENAI_API_KEY appears invalid (length < 40 characters)${NC}"
+    echo ""
+    echo "Current key length: ${#OPENAI_API_KEY}"
+    echo ""
+    echo "Valid OpenAI API keys are typically 50+ characters."
+    echo "Please verify you copied the full key from:"
+    echo "  https://platform.openai.com/api-keys"
     echo ""
     exit 2
 fi
