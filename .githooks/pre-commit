@@ -1,15 +1,22 @@
 #!/bin/bash
 # pre-commit hook - blocks commits containing OpenAI API key patterns
 # Enable: git config core.hooksPath .githooks
+#
+# Scans ALL staged files (no file-type whitelisting).
+# Blocks: sk- or sk-proj- followed by >=40 key-ish chars [A-Za-z0-9_-]
+# Allows: sk-proj-***, sk-proj-REDACTED, sk-proj-TEST, sk-proj-...
 
 set -euo pipefail
 
 RED='\033[0;31m'
 NC='\033[0m'
 
-# Pattern: sk-proj- followed by 40+ alphanumeric chars (real keys)
-# Excludes documentation patterns like "sk-proj-..." or "sk-proj-*"
-KEY_PATTERN='sk-proj-[a-zA-Z0-9_-]{40,}'
+# Pattern: sk- followed by 40+ alphanumeric/underscore/hyphen chars
+# This catches both:
+#   - sk-proj-XXXX... (proj- counts toward the 40+ chars)
+#   - sk-XXXX... (legacy format)
+# But allows short masked examples (sk-proj-***, sk-proj-TEST, etc.)
+KEY_PATTERN='sk-[A-Za-z0-9_-]{40,}'
 
 # Use ripgrep if available, fallback to grep
 if command -v rg &>/dev/null; then
@@ -22,12 +29,12 @@ if [[ -n "$MATCH" ]]; then
     echo ""
     echo -e "${RED}COMMIT BLOCKED: Possible OpenAI API key detected in staged changes${NC}"
     echo ""
-    echo "Pattern matched: $KEY_PATTERN"
+    echo "Matched: ${MATCH:0:20}... (truncated)"
     echo ""
     echo "Remediation:"
     echo "  1. Remove the key from your files"
     echo "  2. Store keys in .env.local (already gitignored)"
-    echo "  3. Use: export OPENAI_API_KEY=\"...\" in your shell"
+    echo "  3. Use masked examples: sk-proj-***, sk-proj-REDACTED"
     echo ""
     exit 1
 fi
