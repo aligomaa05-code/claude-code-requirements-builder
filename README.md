@@ -36,6 +36,8 @@ Every PR runs through escalating validation tiers:
 | 3 | Behavioral Oracle | 7 validators (V1-V7) on generated output | `e2e/run_e2e.sh` |
 | 4 | Stress (future) | Mutation testing, adversarial inputs | — |
 
+> **Note:** Tier 3 validates artifact schema conformance; it does not automate the full interactive multi-phase workflow. See [`tests/e2e/README.md`](tests/e2e/README.md).
+
 ```bash
 # Run all tiers locally
 bash tests/check.sh                    # Tiers 0-2
