@@ -1,0 +1,32 @@
+{
+  "_schema": "2.0",
+  "request": "Add user authentication feature",
+  "status": "complete",
+  "phase": "complete",
+  "started": "2025-02-05T10:00:00Z",
+  "lastUpdated": "2025-02-05T12:00:00Z",
+  "complexity": {
+    "level": "moderate",
+    "questionCounts": {
+      "discovery": 5,
+      "detail": 5
+    }
+  },
+  "progress": {
+    "discovery": { "answered": 5, "total": 5 },
+    "detail": { "answered": 5, "total": 5 }
+  },
+  "validation": {
+    "status": "passed",
+    "score": 90,
+    "blocking": 0,
+    "warnings": 2
+  },
+  "todos": {
+    "status": "injected",
+    "total": 3,
+    "open": 2,
+    "done": 1,
+    "files": ["src/auth.ts", "src/login.ts"]
+  }
+}

@@ -5,6 +5,7 @@
 # Runs in order:
 #   1. Drift Oracle (schema & contract consistency)
 #   2. Test Suite (contract tests against example)
+#   3. Output Validators (validate actual artifacts, not docs)
 #
 # Exit: 0 if all pass, non-zero on any failure
 
@@ -55,6 +56,30 @@ if bash "$SCRIPT_DIR/run-tests.sh"; then
 else
     echo ""
     echo "✗ Test Suite: FAILED"
+    FAILED=1
+fi
+echo ""
+
+#######################################
+# 3. Output Validators (O1-O5)
+#######################################
+echo "▶ Running Output Validators..."
+echo ""
+
+# Determine example directory
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+REQ_DIR="${EXAMPLE_DIR:-$PROJECT_ROOT/examples/2025-01-27-1430-user-authentication}"
+CODE_DIR="$REQ_DIR/mock-codebase"
+
+# Source the validators
+source "$SCRIPT_DIR/output-validators.sh"
+
+if run_all_output_validators "$REQ_DIR" "$CODE_DIR"; then
+    echo ""
+    echo "✓ Output Validators: PASSED"
+else
+    echo ""
+    echo "✗ Output Validators: FAILED"
     FAILED=1
 fi
 echo ""
