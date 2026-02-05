@@ -17,3 +17,5 @@ export const nameSchema = z.string().min(2).max(50);
 export const validateName = (input: string) => {
   return nameSchema.safeParse(input);
 };
+
+// TODO [REQ:2025-01-27-1430-user-authentication] [ID:TODO-016] [P:3] Add input sanitization helper for XSS prevention
