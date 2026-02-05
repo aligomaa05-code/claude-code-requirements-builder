@@ -1,5 +1,7 @@
 # Claude Requirements Gathering System
 
+![CI](https://github.com/aligomaa05-code/claude-code-requirements-builder/actions/workflows/ci.yml/badge.svg)
+
 An intelligent requirements gathering system for Claude Code that progressively builds context through automated discovery, asks simple yes/no questions, and generates comprehensive requirements documentation.
 
 ## 🎯 Overview
@@ -10,12 +12,13 @@ This system transforms the requirements gathering process by:
 - **Two-Phase Questioning**: 5 high-level questions for context, then 5 expert questions after code analysis  
 - **Automated Documentation**: Generates comprehensive specs with specific file paths and patterns
 - **Product Manager Friendly**: No code knowledge required to answer questions
+- **Contract + CI Enforced**: Tier-1 checks run on every push/PR to prevent drift
 
 ## 🚀 Quick Start
 
 ```bash
 # Start gathering requirements for a new feature
-/requirements-start add user profile picture upload
+/requirements-start user profile picture upload
 
 # Check progress and continue
 /requirements-status
@@ -61,23 +64,32 @@ claude-requirements/
 └── examples/                     # Example requirements
 │
 ├── tests/                        # Automated test suite
-│   ├── run-tests.sh             # Test runner (32 tests)
+│   ├── check.sh                 # Single entrypoint for Tier-1 checks
+│   ├── drift-oracle.sh          # Schema & contract consistency (35 checks)
+│   ├── run-tests.sh             # Contract tests (36 tests)
 │   └── README.md                # Test documentation
 ```
 
 ## ✅ Testing
 
-Run the automated test suite to verify all contracts:
+Run the Tier-1 check harness to verify all contracts:
 
 ```bash
-# Run all 32 tests
-./tests/run-tests.sh
-
-# Run a single test
-./tests/run-tests.sh T03
+# Run all Tier-1 checks (recommended)
+bash tests/check.sh
 
 # Expected output
-# ✅ All 32 tests passed!
+# ✅ All Tier-1 checks passed
+```
+
+This runs:
+- **Drift Oracle** (35 checks): Schema v2.0, command count, enum validation, invariant coverage
+- **Test Suite** (36 tests): Contract tests against example artifacts
+
+To test against a different example directory:
+
+```bash
+EXAMPLE_DIR="/path/to/your/example" bash tests/check.sh
 ```
 
 Tests verify:
@@ -91,7 +103,7 @@ Tests verify:
 
 ### Phase 1: Initial Setup & Codebase Analysis
 ```
-User: /requirements-start add export functionality to reports
+User: /requirements-start export functionality to reports
 ```
 AI analyzes the entire codebase structure to understand the architecture, tech stack, and patterns.
 
@@ -233,7 +245,7 @@ Every question includes an intelligent default based on:
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/rizethereum/claude-code-requirements-builder.git
+git clone https://github.com/aligomaa05-code/claude-code-requirements-builder.git
 ```
 
 2. Copy the commands to your project:
@@ -258,7 +270,7 @@ requirements/
 
 ### Feature Development
 ```
-/requirements-start add user avatar upload
+/requirements-start user avatar upload
 # AI analyzes codebase structure
 # Answer 5 yes/no questions about the feature
 # AI autonomously researches relevant code
