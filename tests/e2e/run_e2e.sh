@@ -1,4 +1,5 @@
 #!/bin/bash
+#!/bin/bash
 # run_e2e.sh - Behavioral Oracle for claude-code-requirements-builder
 # Validates GENERATED outputs, not documentation.
 #
@@ -45,7 +46,18 @@ detect_runner() {
         echo "fixture"
         return 0
     fi
-    
+
+    # Explicit openai mode - fail-closed if key missing
+    if [[ "${E2E_RUNNER:-}" == "openai" ]]; then
+        if [[ -n "${OPENAI_API_KEY:-}" ]]; then
+            echo "openai"
+            return 0
+        else
+            echo "openai-missing"
+            return 0
+        fi
+    fi
+
     # Explicit claude mode - fail-closed if CLI unavailable
     if [[ "${E2E_RUNNER:-}" == "claude" ]]; then
         if command -v claude &> /dev/null; then
@@ -56,13 +68,13 @@ detect_runner() {
             return 0
         fi
     fi
-    
+
     # Auto-detect: prefer claude if available
     if command -v claude &> /dev/null; then
         echo "claude"
         return 0
     fi
-    
+
     # No runner found
     echo "none"
     return 0
@@ -83,6 +95,41 @@ run_fixture() {
     # Copy fixture to workspace
     cp -r "$fixture_dir"/* "$workspace/"
     log_info "Fixture copied to workspace"
+    return 0
+}
+
+#######################################
+# Real OpenAI Runner - uses OpenAI API to generate artifacts
+#######################################
+run_openai() {
+    local workspace="$1"
+
+    if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+        log_fail "OPENAI_API_KEY is not set"
+        return 1
+    fi
+
+    if ! command -v node &> /dev/null; then
+        log_fail "node is required but not installed"
+        return 1
+    fi
+
+    if [[ ! -f "$SCRIPT_DIR/run_openai.mjs" ]]; then
+        log_fail "Missing runner: $SCRIPT_DIR/run_openai.mjs"
+        return 1
+    fi
+
+    log_info "Generating artifacts via OpenAI runner..."
+    local out_dir
+    out_dir=$(node "$SCRIPT_DIR/run_openai.mjs") || return 1
+
+    if [[ ! -d "$out_dir" ]]; then
+        log_fail "OpenAI runner did not return a directory path"
+        return 1
+    fi
+
+    cp -r "$out_dir"/* "$workspace/"
+    log_info "OpenAI artifacts copied to workspace"
     return 0
 }
 
@@ -378,6 +425,23 @@ fi
 RUNNER=$(detect_runner)
 log_info "Runner detected: $RUNNER"
 
+# Handle openai-missing: explicit E2E_RUNNER=openai but OPENAI_API_KEY not set
+if [[ "$RUNNER" == "openai-missing" ]]; then
+    echo ""
+    echo -e "${RED}FAIL: E2E_RUNNER=openai requested but OPENAI_API_KEY is not set${NC}"
+    echo ""
+    echo "Set it for this terminal session:"
+    echo "  export OPENAI_API_KEY=\"...\""
+    echo ""
+    echo "Then re-run:"
+    echo "  E2E_RUNNER=openai bash tests/e2e/run_e2e.sh"
+    echo ""
+    echo "Alternative: use fixture runner:"
+    echo "  E2E_RUNNER=fixture bash tests/e2e/run_e2e.sh"
+    echo ""
+    exit 2
+fi
+
 # Handle claude-missing: explicit E2E_RUNNER=claude but CLI not installed
 if [[ "$RUNNER" == "claude-missing" ]]; then
     echo ""
@@ -405,6 +469,7 @@ if [[ "$RUNNER" == "none" ]]; then
     echo ""
     echo "No LLM runner available. Options:"
     echo "  1. Install Claude CLI"
+    echo "  2. Use OpenAI API runner: E2E_RUNNER=openai bash tests/e2e/run_e2e.sh"
     echo "  2. Use fixture runner: E2E_RUNNER=fixture bash tests/e2e/run_e2e.sh"
     echo "  3. Allow skip: E2E_ALLOW_SKIP=1 bash tests/e2e/run_e2e.sh"
     echo ""
@@ -430,6 +495,9 @@ mkdir -p "$WORKSPACE/requirements/e2e-test-feature"
 case "$RUNNER" in
     fixture)
         run_fixture "$WORKSPACE/requirements/e2e-test-feature" || exit 1
+        ;;
+    openai)
+        run_openai "$WORKSPACE/requirements/e2e-test-feature" || exit 1
         ;;
     claude)
         run_claude "$WORKSPACE" || exit 1
