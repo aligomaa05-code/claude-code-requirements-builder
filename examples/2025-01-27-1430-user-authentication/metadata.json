@@ -1,0 +1,56 @@
+{
+  "_schema": "2.0",
+  "folder": "2025-01-27-1430-user-authentication",
+  "request": "Add user authentication with email/password login, registration, and password reset",
+  "status": "complete",
+  "phase": "complete",
+  "started": "2025-01-27T14:30:00Z",
+  "lastUpdated": "2025-01-27T18:00:00Z",
+  "complexity": {
+    "level": "complex",
+    "reason": "Cross-cutting feature: auth affects database, API, middleware, and UI layers",
+    "questionCounts": { "discovery": 6, "detail": 5 }
+  },
+  "progress": {
+    "discovery": { "answered": 6, "total": 6 },
+    "detail": { "answered": 5, "total": 5 }
+  },
+  "validation": {
+    "status": "passed",
+    "lastRun": "2025-01-27T15:50:00Z",
+    "mode": "standard",
+    "score": 85,
+    "blocking": 0,
+    "warnings": 3
+  },
+  "todos": {
+    "status": "injected",
+    "lastUpdated": "2025-01-27T17:30:00Z",
+    "total": 15,
+    "open": 12,
+    "done": 3,
+    "files": [
+      "src/db/prisma/schema.prisma",
+      "src/services/AuthService.ts",
+      "src/utils/validation.ts",
+      "src/services/EmailService.ts",
+      "src/api/routes/auth.ts",
+      "src/middleware/auth.ts",
+      "src/middleware/rateLimit.ts",
+      "src/pages/auth/Login.tsx",
+      "src/pages/auth/Register.tsx",
+      "src/pages/auth/ForgotPassword.tsx",
+      "src/pages/auth/ResetPassword.tsx",
+      "src/pages/auth/VerifyEmail.tsx",
+      "src/components/auth/AuthForm.tsx",
+      "src/components/auth/PasswordInput.tsx",
+      "src/api/routes/index.ts"
+    ]
+  },
+  "verification": {
+    "status": "partial",
+    "lastRun": "2025-01-27T18:00:00Z",
+    "verified": 2,
+    "needsReview": 1
+  }
+}

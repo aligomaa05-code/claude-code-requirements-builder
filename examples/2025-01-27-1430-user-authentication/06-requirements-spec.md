@@ -79,29 +79,6 @@ Implement a complete email/password authentication system with email verificatio
 - Rate limiting on auth endpoints
 - Secure random tokens for reset/verification
 
-## Implementation Notes
-
-### Suggested Libraries
-- **Backend**: Express + Passport.js or custom JWT
-- **Frontend**: React Hook Form for validation
-- **Email**: SendGrid or AWS SES
-- **Validation**: Joi or Yup schemas
-
-### File Structure
-```
-backend/
-  routes/auth.js
-  middleware/auth.js
-  models/User.js
-  services/EmailService.js
-  
-frontend/
-  pages/auth/
-  components/auth/
-  hooks/useAuth.js
-  contexts/AuthContext.js
-```
-
 ## Acceptance Criteria
 
 - [ ] User can register with email/password
@@ -117,6 +94,45 @@ frontend/
 - [ ] Logout clears all sessions
 - [ ] All forms show validation errors
 - [ ] All auth actions show loading states
+
+## Implementation Map
+
+| # | Requirement | Target File | Priority | Notes |
+|---|-------------|-------------|----------|-------|
+| 1 | Add User, Session, PasswordReset models to schema | src/db/prisma/schema.prisma | P1 | Must be first |
+| 2 | Create auth service with register, login, logout methods | [NEW] src/services/AuthService.ts | P1 | Depends on #1 |
+| 3 | Add password validation schema (8+ chars, uppercase, number) | src/utils/validation.ts | P1 | |
+| 4 | Create email service for verification and reset emails | [NEW] src/services/EmailService.ts | P1 | |
+| 5 | Create auth routes (register, login, logout, verify, reset) | [NEW] src/api/routes/auth.ts | P1 | Depends on #2 |
+| 6 | Create auth middleware for protected routes | [NEW] src/middleware/auth.ts | P1 | Depends on #2 |
+| 7 | Add auth-specific rate limiting | [NEW] src/middleware/rateLimit.ts | P2 | |
+| 8 | Create Login page with form and validation | [NEW] src/pages/auth/Login.tsx | P1 | Depends on #5 |
+| 9 | Create Register page with form and validation | [NEW] src/pages/auth/Register.tsx | P1 | Depends on #5 |
+| 10 | Create ForgotPassword page | [NEW] src/pages/auth/ForgotPassword.tsx | P2 | Depends on #5 |
+| 11 | Create ResetPassword page | [NEW] src/pages/auth/ResetPassword.tsx | P2 | Depends on #5 |
+| 12 | Create email verification handler page | [NEW] src/pages/auth/VerifyEmail.tsx | P2 | Depends on #5 |
+| 13 | Create shared AuthForm component | [NEW] src/components/auth/AuthForm.tsx | P1 | |
+| 14 | Create PasswordInput with visibility toggle | [NEW] src/components/auth/PasswordInput.tsx | P2 | |
+| 15 | Wire auth routes into main router | src/api/routes/index.ts | P1 | Depends on #5 |
+
+### Priority Definitions
+- **P1 (Must)**: Core functionality, blocking, implement first
+- **P2 (Should)**: Important but not blocking
+
+## Implementation Notes
+
+### Suggested Libraries
+- **Backend**: Express + custom JWT (jsonwebtoken package)
+- **Frontend**: React Hook Form for validation
+- **Email**: SendGrid or AWS SES
+- **Validation**: Zod schemas (matches existing pattern)
+
+### Recommended Order
+1. Database schema (#1)
+2. Core services (#2, #3, #4)
+3. API layer (#5, #6, #15)
+4. Frontend pages (#8, #9, #13)
+5. Supporting features (#7, #10, #11, #12, #14)
 
 ## Future Enhancements
 

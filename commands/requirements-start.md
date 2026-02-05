@@ -17,8 +17,63 @@ Begin gathering requirements for: $ARGUMENTS
    - Understand technology stack
    - Note patterns and conventions
 
+### Phase 1b: Complexity Assessment
+6. Assess feature complexity based on:
+   - **Scope indicators** from $ARGUMENTS:
+     - Single file/component → simple
+     - Multiple related files → standard
+     - Cross-cutting concerns (auth, data model, API + UI) → complex
+   - **Codebase signals** from analysis:
+     - Clear similar pattern exists → reduces complexity
+     - New architectural pattern needed → increases complexity
+     - External integrations mentioned → increases complexity
+
+7. Assign complexity level and question counts:
+   | Level | Discovery Qs | Detail Qs | Signals |
+   |-------|--------------|-----------|---------|
+   | simple | 3 | 3 | Single component, clear pattern exists |
+   | standard | 5 | 5 | Multiple files, some new patterns |
+   | complex | 6-8 | 5-8 | Cross-cutting, new architecture, integrations |
+   
+   **Complex Count Determinism Rule:**
+   ```
+   Base: 6 questions (discovery), 5 questions (detail)
+   
+   Add +1 discovery question for EACH that applies:
+     • External API/service integration required
+     • New database schema or data model changes
+     • Security-sensitive scope (auth, payments, PII)
+   
+   Add +1 detail question for EACH that applies:
+     • Multiple team boundaries affected
+     • Breaking changes to existing interfaces
+     • Compliance or audit requirements
+   
+   Cap: 8 discovery, 8 detail (maximum)
+   ```
+   
+   Note: Document which triggers applied in metadata.complexity.reason.
+
+8. Record in metadata.json:
+   ```json
+   {
+     "complexity": {
+       "level": "simple|standard|complex",
+       "reason": "Brief explanation",
+       "questionCounts": { "discovery": N, "detail": N }
+     }
+   }
+   ```
+
+9. Announce to user:
+   ```
+   📊 Complexity: [level]
+   Reason: [brief explanation]
+   This will involve [N] discovery questions and [N] detail questions.
+   ```
+
 ### Phase 2: Context Discovery Questions
-6. Generate the five most important yes/no questions to understand the problem space:
+10. Generate [N] yes/no questions based on complexity level:
    - Questions informed by codebase structure
    - Questions about user interactions and workflows
    - Questions about similar features users currently use
@@ -30,7 +85,7 @@ Begin gathering requirements for: $ARGUMENTS
    - Only after all questions are asked, record answers in 02-discovery-answers.md as received and update metadata.json. Not before.
 
 ### Phase 3: Targeted Context Gathering (Autonomous)
-7. After all discovery questions answered:
+11. After all discovery questions answered:
    - Use mcp__RepoPrompt__search (if available) to find specific files based on discovery answers
    - Use mcp__RepoPrompt__set_selection and read_selected_files (if available) to batch read relevant code
    - Deep dive into similar features and patterns
@@ -44,8 +99,8 @@ Begin gathering requirements for: $ARGUMENTS
      - Integration points identified
 
 ### Phase 4: Expert Requirements Questions
-8. Now ask questions like a senior developer who knows the codebase:
-   - Write the top 5 most pressing unanswered detailed yes/no questions to 04-detail-questions.md
+12. Now ask questions like a senior developer who knows the codebase:
+   - Write [N] detailed yes/no questions to 04-detail-questions.md (N from complexity assessment)
    - Questions should be as if you were speaking to the product manager who knows nothing of the code
    - These questions are meant to to clarify expected system behavior now that you have a deep understanding of the code
    - Include smart defaults based on codebase patterns
@@ -53,7 +108,7 @@ Begin gathering requirements for: $ARGUMENTS
    - Only after all questions are asked, record answers in 05-detail-answers.md as received
 
 ### Phase 5: Requirements Documentation
-9. Generate comprehensive requirements spec in 06-requirements-spec.md:
+13. Generate comprehensive requirements spec in 06-requirements-spec.md:
    - Problem statement and solution overview
    - Functional requirements based on all answers
    - Technical requirements with specific file paths
@@ -62,6 +117,9 @@ Begin gathering requirements for: $ARGUMENTS
    - Assumptions for any unanswered questions
 
 ## Question Formats:
+
+Note: Number of questions adapts to complexity (3 for simple, 5 for standard, 8 for complex).
+Examples below show standard (5 questions) format.
 
 ### Discovery Questions (Phase 2):
 ```
@@ -102,17 +160,22 @@ Begin gathering requirements for: $ARGUMENTS
 ## Metadata Structure:
 ```json
 {
-  "id": "feature-slug",
+  "_schema": "2.0",
+  "folder": "YYYY-MM-DD-HHMM-feature-slug",
+  "request": "Original user request text",
   "started": "ISO-8601-timestamp",
   "lastUpdated": "ISO-8601-timestamp",
   "status": "active",
-  "phase": "discovery|context|detail|complete",
-  "progress": {
-    "discovery": { "answered": 0, "total": 5 },
-    "detail": { "answered": 0, "total": 0 }
+  "phase": "setup|discovery|context|detail|complete",
+  "complexity": {
+    "level": "simple|standard|complex",
+    "reason": "Brief explanation of assessment",
+    "questionCounts": { "discovery": N, "detail": N }
   },
-  "contextFiles": ["paths/of/files/analyzed"],
-  "relatedFeatures": ["similar features found"]
+  "progress": {
+    "discovery": { "answered": 0, "total": "from complexity" },
+    "detail": { "answered": 0, "total": "from complexity" }
+  }
 }
 ```
 
@@ -120,3 +183,22 @@ Begin gathering requirements for: $ARGUMENTS
 - After each phase, announce: "Phase complete. Starting [next phase]..."
 - Save all work before moving to next phase
 - User can check progress anytime with /requirements-status
+
+## Phase Display Names:
+Map enum values to user-facing display names:
+
+| Enum Value | Display Name | Description |
+|------------|--------------|-------------|
+| setup | Initial Setup | Folder creation, codebase analysis, complexity assessment |
+| discovery | Context Discovery | Yes/no questions about problem space (Phase 2) |
+| context | Targeted Context | Autonomous codebase analysis (Phase 3) |
+| detail | Expert Requirements | Detailed yes/no questions with code context (Phase 4) |
+| complete | Complete | Spec generated, ready for validation/injection |
+
+## Error Handling
+| Condition | Response |
+|-----------|----------|
+| No $ARGUMENTS provided | "Please provide a feature description. Usage: /requirements-start add user authentication" |
+| requirements/ folder doesn't exist | Create it automatically, then continue |
+| Folder with same timestamp exists | Append unique suffix or wait and retry |
+| MCP tools unavailable | Continue with manual file analysis, note limitation |

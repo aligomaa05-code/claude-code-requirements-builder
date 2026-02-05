@@ -26,7 +26,7 @@ Progress: [X/Y questions]
 📋 PHASE-SPECIFIC RULES:
 
 Phase 2 - Context Discovery:
-- ✅ Ask 5 yes/no questions about the problem space
+- ✅ Ask [N] yes/no questions (N from complexity assessment: simple=3, standard=5, complex=6-8)
 - ✅ Questions for product managers (no code knowledge required)
 - ✅ Focus on user workflows, not technical details
 - ✅ Write ALL questions before asking any
@@ -39,7 +39,7 @@ Phase 3 - Targeted Context (Autonomous):
 - ❌ No user interaction during this phase
 
 Phase 4 - Expert Requirements:
-- ✅ Ask 5 detailed yes/no questions
+- ✅ Ask [N] detailed yes/no questions (N from complexity assessment)
 - ✅ Questions as if speaking to PM who knows no code
 - ✅ Clarify expected system behavior
 - ✅ Reference specific files when relevant
@@ -49,12 +49,12 @@ Phase 4 - Expert Requirements:
 1. ❌ Don't start coding or implementing
 2. ❌ Don't ask open-ended questions
 3. ❌ Don't record answers until ALL questions in phase are asked
-4. ❌ Don't exceed 5 questions per phase
+4. ❌ Don't exceed question count from complexity assessment (simple=3, standard=5, complex=6-8)
 
 📍 CURRENT STATE:
 - Last question: [Show last question]
 - User response: [pending/answered]
-- Next action: [Continue with question X of 5]
+- Next action: [Continue with question X of N]
 
 Please continue with the current question or read the next one from the file.
 ```
@@ -78,3 +78,10 @@ Please continue with the current question or read the next one from the file.
 - Multiple "?" in response → remind one question
 - Response > 100 words → remind to be concise
 - Open-ended words ("what", "how") → remind yes/no only
+
+## Error Handling
+| Condition | Response |
+|-----------|----------|
+| No active requirement | "No active requirement gathering session. Use /requirements-start to begin." |
+| metadata.json missing | "Cannot determine current phase. Requirement may be corrupt." |
+| Phase is 'complete' | "Requirement gathering is complete. No rules to remind. Use /requirements-status to see next steps." |

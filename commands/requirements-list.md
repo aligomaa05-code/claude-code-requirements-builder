@@ -21,7 +21,7 @@ Display all requirements with their status and summaries.
 📚 Requirements Documentation
 
 🔴 ACTIVE: profile-picture-upload
-   Phase: Discovery (3/5) | Started: 30m ago
+   Phase: Context Discovery (3/5) | Started: 30m ago
    Next: Q4 about file restrictions
 
 ✅ COMPLETE:
@@ -36,7 +36,7 @@ Display all requirements with their status and summaries.
    
 ⚠️ INCOMPLETE:
 2025-01-24-1100-notification-system
-   Status: Paused at Detail phase (2/8) | Last: 2 days ago
+   Status: Paused at Expert Requirements (2/8) | Last: 2 days ago
    Summary: Email/push notifications for events
    
 📈 Statistics:
@@ -61,3 +61,11 @@ Display all requirements with their status and summaries.
    - "View details: /requirements-show [id]"
    - "Resume incomplete: /requirements-status"
    - "Start new: /requirements-start [description]"
+
+## Error Handling
+| Condition | Response |
+|-----------|----------|
+| No requirements/ folder | "No requirements/ folder found. Use /requirements-start to create your first requirement." |
+| requirements/ folder empty | "No requirements found. Use /requirements-start [description] to begin." |
+| metadata.json missing in a folder | Skip folder, note in output: "[folder] - metadata missing" |
+| metadata.json corrupt/invalid | Skip folder, note in output: "[folder] - invalid metadata" |

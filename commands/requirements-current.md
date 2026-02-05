@@ -26,13 +26,25 @@ Display detailed information about the active requirement.
 - 04-detail-questions.md - Expert requirements questions
 - 05-detail-answers.md - User's detailed answers
 - 06-requirements-spec.md - Final requirements document
+- 07-validation-report.md - Validation findings (if validated)
+- 08-todo-manifest.md - TODO tracking (if injected)
+- 09-verification-report.md - Verification findings (if verified)
 
 ## Display Format:
+
+Phase enum → display name mapping:
+- setup → "Initial Setup"
+- discovery → "Context Discovery"
+- context → "Targeted Context"
+- detail → "Expert Requirements"
+- complete → "Complete"
+
 ```
 📋 Current Requirement: [name]
 ⏱️  Duration: [time since start]
 📊 Phase: [Initial Setup/Context Discovery/Targeted Context/Expert Requirements/Complete]
 🎯 Progress: [total answered]/[total questions]
+📈 Complexity: [simple/standard/complex] - [reason from metadata]
 
 📄 Initial Request:
 [Show content from 00-initial-request.md]
@@ -61,6 +73,29 @@ Q2: Extend UserModel at models/User.ts? YES
 Q3: Add new API endpoint to routes/api/v1? [PENDING]
 ...
 
+✅ Validation (if validated):
+[Show only if validation section exists in metadata]
+Status: [passed/failed] | Score: [X]/100
+Blocking issues: [Y] | Warnings: [Z]
+Report: requirements/[folder]/07-validation-report.md
+
+📌 TODOs (if injected):
+[Show only if todos.status = "injected" or "complete"]
+Status: [X] open, [Y] done of [Z] total
+
+By file:
+  src/services/AuthService.ts
+    ⬜ TODO-001 [P1] Create auth service
+  src/utils/validation.ts  
+    ✅ TODO-002 [P1] Add password validation
+  ...
+
+🔍 Verification (if verified):
+[Show only if verification section exists in metadata]
+Status: [passed/partial/failed]
+Verified: [X] | Needs review: [Y]
+Report: requirements/[folder]/09-verification-report.md
+
 📝 Next Action:
 - Continue with /requirements-status
 - End early with /requirements-end
@@ -70,3 +105,11 @@ Q3: Add new API endpoint to routes/api/v1? [PENDING]
 - This is view-only (doesn't continue gathering)
 - Shows complete history and context
 - Use /requirements-status to continue
+
+## Error Handling
+| Condition | Response |
+|-----------|----------|
+| No .current-requirement file | "No active requirement. Use /requirements-start to begin or /requirements-list to see existing." |
+| .current-requirement points to missing folder | "Requirement folder not found: [name]" |
+| metadata.json missing | "Cannot display: metadata.json not found in requirement folder." |
+| Any artifact file missing | Show available files, indicate missing ones as "Not yet generated" |

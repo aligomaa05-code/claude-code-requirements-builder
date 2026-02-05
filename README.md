@@ -59,7 +59,33 @@ claude-requirements/
 │       └── 06-requirements-spec.md   # Final requirements
 │
 └── examples/                     # Example requirements
+│
+├── tests/                        # Automated test suite
+│   ├── run-tests.sh             # Test runner (32 tests)
+│   └── README.md                # Test documentation
 ```
+
+## ✅ Testing
+
+Run the automated test suite to verify all contracts:
+
+```bash
+# Run all 32 tests
+./tests/run-tests.sh
+
+# Run a single test
+./tests/run-tests.sh T03
+
+# Expected output
+# ✅ All 32 tests passed!
+```
+
+Tests verify:
+- TODO format compliance (T01-T06)
+- Validation logic (T07-T12)
+- Verification thresholds (T13-T18)
+- Schema and timestamps (T19-T26)
+- Cross-file invariants (I1-I7)
 
 ## 🔄 How It Works
 
